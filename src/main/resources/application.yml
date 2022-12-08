@@ -1,0 +1,81 @@
+server:
+  port: 8070
+
+logging:
+  level:
+    ROOT: INFO
+    # set the 3 lines to warn to suppress large config list output on startup
+    org.apache.kafka.clients.admin.AdminClientConfig: WARN
+    org.apache.kafka.clients.producer.ProducerConfig: WARN
+    org.apache.kafka.clients.consumer.ConsumerConfig: WARN
+
+spring:
+  application:
+    name: scs-resume
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    bootstrap-servers: 'localhost:9092'
+    jaas:
+      enabled: false
+    security:
+      protocol: PLAINTEXT
+    properties:
+      sasl:
+        mechanism: PLAIN
+  cloud:
+    stream:
+      kafka:
+        binder:
+          auto-create-topics: false
+      # which steps are performed?
+      function.definition: 'process1;process2'
+      bindings:
+        # - - - process1
+        process1-in-0:
+          group: ${application.id.process1}
+          destination: ${application.topics.queueIn.topic}
+          consumer: # consumer properties on each function (processor) level
+            auto-startup: true
+            concurrency: 1 # See "2.19.4 Special note on concurrency" - translated to num.stream.thread
+        process1-out-0:
+          destination: ${application.topics.queueOut1.topic}
+         # - - - process2
+        process2-in-0:
+          group: ${application.id.process2}
+          destination: ${application.topics.queueIn.topic}
+          consumer: # consumer properties on each function (processor) level
+            auto-startup: true
+            concurrency: 1 # See "2.19.4 Special note on concurrency" - translated to num.stream.thread
+        process2-out-0:
+          destination: ${application.topics.queueOut2.topic}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ['health', 'info', 'bindings', 'logfile', 'metrics', 'configprops', 'env']
+  endpoint:
+    health:
+      show-details: ALWAYS
+  health:
+    binders:
+      enabled: true # is anyway the default
+
+application:
+  sleep-ms-in-processing: 1000
+  topics:
+    queueIn:
+      topic: topic-in
+    queueOut1:
+      topic: topic-out-1
+    queueOut2:
+      topic: topic-out-2
+  id:
+    # the id is used as the consumer group id, so it has to be configurable
+    process1: process1resume
+    process2: process1resume

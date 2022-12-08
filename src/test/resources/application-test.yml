@@ -1,0 +1,21 @@
+logging:
+  level:
+    ROOT: WARN
+    com.giraone.scs: INFO
+    # set the 4 lines to warn to suppress large config list output on startup
+    org.apache.kafka.common.config.AbstractConfig: WARN
+    org.apache.kafka.clients.admin.AdminClientConfig: WARN
+    org.apache.kafka.clients.producer.ProducerConfig: WARN
+    org.apache.kafka.clients.consumer.ConsumerConfig: WARN
+    # Ignore INFO/DEBUG for Spring test classes
+    org.springframework.test.context: WARN
+
+spring:
+  kafka:
+    jaas:
+      enabled: false
+    security:
+      protocol: PLAINTEXT
+    properties:
+      sasl:
+        mechanism: PLAIN
