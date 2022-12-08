@@ -59,7 +59,7 @@ public class EventProcessor {
             throw new RuntimeException(e);
         }
         return MessageBuilder.withPayload(messageOutBody)
-            .setHeader(KafkaHeaders.MESSAGE_KEY, messageOut.getRequestId())
+            .setHeader(KafkaHeaders.KEY, messageOut.getRequestId())
             .build();
     }
 

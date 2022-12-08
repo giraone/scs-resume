@@ -67,7 +67,7 @@ class ProcessInOutTest extends AbstractInOutTest {
         try {
             produce(topicIn, pf);
 
-            ConsumerRecord<String, String> consumerRecord = KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis());
+            ConsumerRecord<String, String> consumerRecord = KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME);
             assertThat(consumerRecord).isNotNull();
             LOGGER.info("ProcessInOutTest testProcessWorks POLL TOPIC \"{}\"RETURNED key={} value={}",
                 topicOut, consumerRecord.key(), consumerRecord.value());
@@ -92,7 +92,7 @@ class ProcessInOutTest extends AbstractInOutTest {
 
         try {
             produce(topicIn, pf);
-            assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
+            assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME))
                 .hasMessageContaining("No records found for topic");
         } finally {
             pf.destroy();
