@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import static com.giraone.scs.resume.config.TestConfig.*;
 import static com.giraone.scs.resume.web.RunningController.ATTRIBUTE_paused;
 import static com.giraone.scs.resume.web.RunningController.ATTRIBUTE_running;
 
@@ -20,6 +22,16 @@ import static com.giraone.scs.resume.web.RunningController.ATTRIBUTE_running;
  *
  * @see RunningController
  */
+@EmbeddedKafka(
+    controlledShutdown = true,
+    topics = {
+        TOPIC_IN_1,
+        TOPIC_OUT_1,
+        TOPIC_OUT_2
+    },
+    bootstrapServersProperty = "spring.kafka.bootstrap-servers",
+    partitions = 2
+)
 @SpringBootTest
 @DirtiesContext
 @AutoConfigureWebTestClient

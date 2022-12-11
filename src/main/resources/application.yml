@@ -53,7 +53,6 @@ spring:
             concurrency: 1 # See "2.19.4 Special note on concurrency" - translated to num.stream.thread
         process2-out-0:
           destination: ${application.topics.queueOut2.topic}
-
 management:
   endpoints:
     web:
@@ -78,4 +77,4 @@ application:
   id:
     # the id is used as the consumer group id, so it has to be configurable
     process1: process1resume
-    process2: process1resume
+    process2: process2resume

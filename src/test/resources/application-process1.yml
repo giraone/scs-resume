@@ -1,4 +1,4 @@
 spring:
   cloud:
-    function:
-      definition: 'process1'
+    stream:
+      function.definition: 'process1'

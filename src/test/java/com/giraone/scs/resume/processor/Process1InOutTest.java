@@ -20,20 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // See https://blog.mimacom.com/testing-apache-kafka-with-spring-boot-junit5/
-
 @EmbeddedKafka(
     controlledShutdown = true,
     topics = {
         TOPIC_IN_1,
         TOPIC_OUT_1
     },
-    bootstrapServersProperty = "spring.kafka.bootstrap-servers",
-    partitions = 3
+    bootstrapServersProperty = "spring.kafka.bootstrap-servers"
 )
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DirtiesContext
 @ActiveProfiles({"test", "process1"})
-class ProcessInOutTest extends AbstractInOutTest {
+class Process1InOutTest extends AbstractInOutTest {
 
     @Autowired
     private SwitchOnOff switchOnOff;

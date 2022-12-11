@@ -2,7 +2,7 @@
 
 for topic in topic-in topic-out-1 topic-out-2
 do
-  echo "--create $topic"
+  echo "Create $topic"
   docker exec -it kafka-1 kafka-topics \
     --bootstrap-server kafka-1:9092 \
     --create \
