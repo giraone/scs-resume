@@ -4,7 +4,7 @@ import java.time.Duration;
 
 public class TestConfig {
 
-    public static final String TOPIC_IN_1 = "topic-in";
+    public static final String TOPIC_IN = "topic-in";
     public static final String TOPIC_OUT_1 = "topic-out-1";
     public static final String TOPIC_OUT_2 = "topic-out-2";
 

@@ -55,7 +55,7 @@ public class EventProcessor {
     public Consumer<byte[]> process2() {
         return in -> {
             MessageOut messageOut = process(2, deserialize(in, MessageIn.class));
-            sendToDynamicTarget(messageOut, x -> "process2-out-0");
+            sendToDynamicTarget(messageOut, "process2-out-0");
         };
     }
 
@@ -85,20 +85,15 @@ public class EventProcessor {
             .build();
     }
 
-    protected boolean sendToDynamicTarget(MessageOut messageOut, Function<MessageOut,String> dynamicTarget) {
+    protected boolean sendToDynamicTarget(MessageOut messageOut, String bindingName) {
 
-        final String bindingName = dynamicTarget.apply(messageOut);
-        if (bindingName == null) {
-            LOGGER.warn(">>> No dynamic target for {}!", messageOut);
-            return false;
-        }
         final Message< byte[]> message = serialize(messageOut);
         boolean ok = streamBridge.send(bindingName, message);
         if (!ok) {
             LOGGER.error(">>> Cannot send event to out binding \"{}\"!", bindingName);
             return false;
         } else {
-            LOGGER.debug("SENT TO TOPIC of binding {}", bindingName);
+            LOGGER.debug("SENT TO destination TOPIC of binding {}", bindingName);
         }
         return true;
     }

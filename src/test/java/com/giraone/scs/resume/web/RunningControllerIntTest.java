@@ -24,13 +24,7 @@ import static com.giraone.scs.resume.web.RunningController.ATTRIBUTE_running;
  */
 @EmbeddedKafka(
     controlledShutdown = true,
-    topics = {
-        TOPIC_IN_1,
-        TOPIC_OUT_1,
-        TOPIC_OUT_2
-    },
-    bootstrapServersProperty = "spring.kafka.bootstrap-servers",
-    partitions = 2
+    bootstrapServersProperty = "spring.kafka.bootstrap-servers"
 )
 @SpringBootTest
 @DirtiesContext

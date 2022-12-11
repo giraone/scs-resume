@@ -24,9 +24,10 @@ import org.springframework.kafka.test.utils.KafkaTestUtils;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.giraone.scs.resume.config.TestConfig.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // Needed, because otherwise setup must be static
@@ -58,10 +59,30 @@ public abstract class AbstractInOutTest {
     public void tearDown() {
         LOGGER.info("TEST AbstractInOutTest tearDown");
         consumer.close();
+        embeddedKafka.destroy();
         // Do not use embeddedKafka.destroy(); Use @DirtiesContext on the concrete class.
         System.clearProperty("spring.kafka.bootstrap-servers");
         System.clearProperty("spring.cloud.stream.kafka.streams.binder.brokers");
     }
+
+    //- CONSUME --------------------------------------------------------------------------------------------------------
+
+    protected ConsumerRecord<String, String> pollTopic(String topic) {
+        LOGGER.info("POLLING TOPIC \"{}\"", topic);
+        ConsumerRecord<String, String> consumerRecord = KafkaTestUtils.getSingleRecord(
+            consumer, topic, DEFAULT_CONSUMER_POLL_TIME.toMillis());
+        LOGGER.info("POLL TOPIC \"{}\" RETURNED key={} value={}",
+            topic, consumerRecord.key(), consumerRecord.value());
+        return consumerRecord;
+    }
+
+    protected void pollTopicForBeingEmpty(String topic) {
+        LOGGER.info("POLLING TOPIC \"{}\" TO BE EMPTY", topic);
+        assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topic, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
+            .hasMessageContaining("No records found for topic");
+    }
+
+    //- PRODUCE --------------------------------------------------------------------------------------------------------
 
     protected DefaultKafkaProducerFactory<String, String> buildDefaultKafkaProducerFactory() {
         final Map<String, Object> producerProps = KafkaTestUtils.producerProps(embeddedKafka);
@@ -71,42 +92,51 @@ public abstract class AbstractInOutTest {
         return new DefaultKafkaProducerFactory<>(producerProps);
     }
 
-    protected void produce(String topic, DefaultKafkaProducerFactory<String, String> pf) throws JsonProcessingException, InterruptedException {
+    protected void produce(Object message, String topic) throws JsonProcessingException, InterruptedException {
+
+        DefaultKafkaProducerFactory<String, String> pf = buildDefaultKafkaProducerFactory();
         KafkaTemplate<String, String> template = new KafkaTemplate<>(pf, true);
-        MessageIn messageIn = MessageIn.builder()
-            .name("test")
-            .build();
+
         String messageKey = String.format("%08d", System.currentTimeMillis()); // to test StringSerializer
-        LOGGER.info("{} SENDING TO TOPIC {}", getClass().getName(), topic);
-        template.send(topic, messageKey, objectMapper.writeValueAsString(messageIn));
+        LOGGER.info("SENDING TO TOPIC \"{}\"", topic);
+        template.send(topic, messageKey, objectMapper.writeValueAsString(message));
+        LOGGER.info("SENT TO TOPIC \"{}\"", topic);
         Thread.sleep(DEFAULT_SLEEP_AFTER_PRODUCE_TIME.toMillis());
+        LOGGER.info("SLEPT {} AFTER SENT TO TOPIC \"{}\"", DEFAULT_SLEEP_AFTER_PRODUCE_TIME, topic);
     }
 
-    protected void produceAndCheckEmpty(String topicIn, String topicOut, DefaultKafkaProducerFactory<String, String> pf) throws JsonProcessingException, InterruptedException {
-
-        try {
-            produce(topicIn, pf);
-            assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
-                .hasMessageContaining("No records found for topic");
-        } finally {
-            pf.destroy();
-        }
+    protected void produceAndCheckEmpty(Object message, String topicIn, String topicOut) throws JsonProcessingException, InterruptedException {
+        produce(message, topicIn);
+        assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
+            .hasMessageContaining("No records found for topic");
     }
 
-    protected ConsumerRecord<String, String> pollTopic(String topic) {
-        LOGGER.info("{} POLLING TOPIC {}", getClass().getName(), topic);
-        ConsumerRecord<String, String> consumerRecord = KafkaTestUtils.getSingleRecord(
-            consumer, topic, DEFAULT_CONSUMER_POLL_TIME.toMillis());
-        LOGGER.info("{} POLL TOPIC RETURNED key={} value={}",
-            getClass().getName(), consumerRecord.key(), consumerRecord.value());
+    protected ConsumerRecord<String, String> produceAndAwaitConsume(Object message, String topicIn, String topicOut)
+        throws JsonProcessingException, InterruptedException {
+
+        produce(message, topicIn);
+        ConsumerRecord<String, String> consumerRecord = pollTopic(topicOut);
+        assertThat(consumerRecord.key()).isNotNull();
+        assertThat(consumerRecord.value()).isNotNull();
         return consumerRecord;
     }
 
-    protected void awaitOnNewThread(Runnable runnable) {
-        awaitOnNewThread(runnable, DEFAULT_THREAD_WAIT_TIME);
+    //- THREADS --------------------------------------------------------------------------------------------------------
+
+    protected boolean awaitOnNewThread(Callable callable) {
+        return awaitOnNewThread(callable, DEFAULT_THREAD_WAIT_TIME);
     }
 
-    protected void awaitOnNewThread(Runnable runnable, Duration waitAtMost) {
+    protected Boolean awaitOnNewThread(Callable<Boolean> callable, Duration waitAtMost) {
+
+        final AtomicBoolean result = new AtomicBoolean();
+        final Runnable runnable = () -> {
+            try {
+                result.set(callable.call());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
         Thread thread = new Thread(runnable);
         thread.start();
         synchronized (thread) {
@@ -116,14 +146,6 @@ public abstract class AbstractInOutTest {
                 e.printStackTrace();
             }
         }
-    }
-
-    protected void awaitOnNewThread(Callable callable) {
-        awaitOnNewThread(callable, DEFAULT_THREAD_WAIT_TIME);
-    }
-
-    protected void awaitOnNewThread(Callable callable, Duration waitAtMost) {
-        FutureTask<Void> futureTask = new FutureTask<>(callable);
-        awaitOnNewThread(futureTask, waitAtMost);
+        return result.get();
     }
 }

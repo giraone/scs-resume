@@ -16,11 +16,6 @@ import static com.giraone.scs.resume.config.TestConfig.*;
  */
 @EmbeddedKafka(
     controlledShutdown = true,
-    topics = {
-        TOPIC_IN_1,
-        TOPIC_OUT_1,
-        TOPIC_OUT_2
-    },
     bootstrapServersProperty = "spring.kafka.bootstrap-servers"
 )
 @SpringBootTest
