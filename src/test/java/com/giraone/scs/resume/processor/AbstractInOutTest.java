@@ -26,8 +26,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import static com.giraone.scs.resume.config.TestConfig.DEFAULT_CONSUMER_POLL_TIME;
-import static com.giraone.scs.resume.config.TestConfig.DEFAULT_SLEEP_AFTER_PRODUCE_TIME;
+import static com.giraone.scs.resume.config.TestConfig.*;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // Needed, because otherwise setup must be static
@@ -103,6 +102,10 @@ public abstract class AbstractInOutTest {
         return consumerRecord;
     }
 
+    protected void awaitOnNewThread(Runnable runnable) {
+        awaitOnNewThread(runnable, DEFAULT_THREAD_WAIT_TIME);
+    }
+
     protected void awaitOnNewThread(Runnable runnable, Duration waitAtMost) {
         Thread thread = new Thread(runnable);
         thread.start();
@@ -113,6 +116,10 @@ public abstract class AbstractInOutTest {
                 e.printStackTrace();
             }
         }
+    }
+
+    protected void awaitOnNewThread(Callable callable) {
+        awaitOnNewThread(callable, DEFAULT_THREAD_WAIT_TIME);
     }
 
     protected void awaitOnNewThread(Callable callable, Duration waitAtMost) {

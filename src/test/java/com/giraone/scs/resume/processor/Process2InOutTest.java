@@ -61,6 +61,6 @@ class Process2InOutTest extends AbstractInOutTest {
             assertThat(messageOut.getRequestId()).isNotNull();
             assertThat(messageOut.getCalculatedValue1()).isEqualTo(4);
             return true;
-        }, DEFAULT_THREAD_WAIT_TIME);
+        });
     }
 }
