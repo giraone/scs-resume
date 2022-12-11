@@ -9,5 +9,6 @@ public class TestConfig {
     public static final String TOPIC_OUT_2 = "topic-out-2";
 
     public static final Duration DEFAULT_SLEEP_AFTER_PRODUCE_TIME = Duration.ofSeconds(1);
-    public static final Duration DEFAULT_CONSUMER_POLL_TIME = Duration.ofSeconds(3);
+    public static final Duration DEFAULT_CONSUMER_POLL_TIME = Duration.ofSeconds(1);
+    public static final Duration DEFAULT_THREAD_WAIT_TIME = Duration.ofSeconds(1);
 }

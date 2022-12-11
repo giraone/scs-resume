@@ -1,7 +1,6 @@
 package com.giraone.scs.resume.processor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giraone.scs.resume.model.MessageIn;
 import com.giraone.scs.resume.model.MessageOut;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeAll;
@@ -9,15 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import static com.giraone.scs.resume.config.TestConfig.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // See https://blog.mimacom.com/testing-apache-kafka-with-spring-boot-junit5/
 @EmbeddedKafka(
@@ -55,16 +51,20 @@ class Process1InOutTest extends AbstractInOutTest {
 
         LOGGER.info("ProcessInOutTest testProcessWorksWhenStopped");
         switchOnOff.changeStateToPaused(1, true);
-        produceAndCheckEmpty(TOPIC_IN_1, TOPIC_OUT_1);
+        DefaultKafkaProducerFactory<String, String> pf = buildDefaultKafkaProducerFactory();
+        produceAndCheckEmpty(TOPIC_IN_1, TOPIC_OUT_1, pf);
     }
 
     private void produceAndAwaitConsume(String topicIn, String topicOut) throws JsonProcessingException, InterruptedException {
 
         DefaultKafkaProducerFactory<String, String> pf = buildDefaultKafkaProducerFactory();
-
         try {
             produce(topicIn, pf);
 
+        } finally {
+            pf.destroy();
+        }
+        awaitOnNewThread(() -> {
             ConsumerRecord<String, String> consumerRecord = pollTopic(topicOut);
             assertThat(consumerRecord.key()).isNotNull();
             assertThat(consumerRecord.value()).isNotNull();
@@ -76,31 +76,7 @@ class Process1InOutTest extends AbstractInOutTest {
             assertThat(messageOut.getMessageIn().getName()).isEqualTo("test");
             assertThat(messageOut.getRequestId()).isNotNull();
             assertThat(messageOut.getCalculatedValue1()).isEqualTo(4);
-        } finally {
-            pf.destroy();
-        }
-    }
-
-    private void produceAndCheckEmpty(String topicIn, String topicOut) throws JsonProcessingException, InterruptedException {
-
-        DefaultKafkaProducerFactory<String, String> pf = buildDefaultKafkaProducerFactory();
-
-        try {
-            produce(topicIn, pf);
-            assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
-                .hasMessageContaining("No records found for topic");
-        } finally {
-            pf.destroy();
-        }
-    }
-
-    private void produce(String topicIn, DefaultKafkaProducerFactory<String, String> pf) throws JsonProcessingException, InterruptedException {
-        KafkaTemplate<String, String> template = new KafkaTemplate<>(pf, true);
-        MessageIn messageIn = MessageIn.builder()
-            .name("test")
-            .build();
-        String messageKey = String.format("%08d", System.currentTimeMillis()); // to test StringSerializer
-        template.send(topicIn, messageKey, objectMapper.writeValueAsString(messageIn));
-        Thread.sleep(DEFAULT_SLEEP_AFTER_PRODUCE_TIME.toMillis());
+            return true;
+        }, DEFAULT_THREAD_WAIT_TIME);
     }
 }

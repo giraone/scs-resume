@@ -92,15 +92,15 @@ public class EventProcessor {
             LOGGER.warn(">>> No dynamic target for {}!", messageOut);
             return false;
         }
-        final Message<MessageOut> message = MessageBuilder.withPayload(messageOut)
-            .setHeader(KafkaHeaders.MESSAGE_KEY, messageOut.getRequestId())
-            .build();
-
+        final Message< byte[]> message = serialize(messageOut);
         boolean ok = streamBridge.send(bindingName, message);
         if (!ok) {
             LOGGER.error(">>> Cannot send event to out binding \"{}\"!", bindingName);
+            return false;
+        } else {
+            LOGGER.debug("SENT TO TOPIC of binding {}", bindingName);
         }
-        return false;
+        return true;
     }
 
     private Message<byte[]> processAndSetKey(int processorNr, byte[] messageInBody) {

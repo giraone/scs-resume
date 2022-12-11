@@ -1,14 +1,12 @@
 package com.giraone.scs.resume.processor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.giraone.scs.resume.model.MessageIn;
 import com.giraone.scs.resume.model.MessageOut;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -46,34 +44,23 @@ class Process2InOutTest extends AbstractInOutTest {
     private void produceAndAwaitConsume(String topicIn, String topicOut) throws JsonProcessingException, InterruptedException {
 
         DefaultKafkaProducerFactory<String, String> pf = buildDefaultKafkaProducerFactory();
-
         try {
             produce(topicIn, pf);
-
-            LOGGER.info("{} POLLING TOPIC {}", getClass().getName(), topicOut);
+        } finally {
+            pf.destroy();
+        }
+        awaitOnNewThread(() -> {
             ConsumerRecord<String, String> consumerRecord = pollTopic(topicOut);
             assertThat(consumerRecord.key()).isNotNull();
             assertThat(consumerRecord.value()).isNotNull();
             // Check that Date/Time-as-String works
             assertThat(consumerRecord.value()).contains("\"startTime\":\"");
-
             MessageOut messageOut = objectMapper.readValue(consumerRecord.value(), MessageOut.class);
             assertThat(messageOut.getMessageIn()).isNotNull();
             assertThat(messageOut.getMessageIn().getName()).isEqualTo("test");
             assertThat(messageOut.getRequestId()).isNotNull();
             assertThat(messageOut.getCalculatedValue1()).isEqualTo(4);
-        } finally {
-            pf.destroy();
-        }
-    }
-
-    private void produce(String topicIn, DefaultKafkaProducerFactory<String, String> pf) throws JsonProcessingException, InterruptedException {
-        KafkaTemplate<String, String> template = new KafkaTemplate<>(pf, true);
-        MessageIn messageIn = MessageIn.builder()
-            .name("test")
-            .build();
-        String messageKey = String.format("%08d", System.currentTimeMillis()); // to test StringSerializer
-        template.send(topicIn, messageKey, objectMapper.writeValueAsString(messageIn));
-        Thread.sleep(DEFAULT_SLEEP_AFTER_PRODUCE_TIME.toMillis());
+            return true;
+        }, DEFAULT_THREAD_WAIT_TIME);
     }
 }

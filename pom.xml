@@ -88,6 +88,7 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Test Dependencies -->
     <!-- Use an assertion language, that is better than hamcrest -->
     <dependency>
       <groupId>org.assertj</groupId>
