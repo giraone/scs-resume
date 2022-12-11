@@ -165,6 +165,11 @@ Now pause/resume, while there are still events:
 ]
 ```
 
+## Implementation details
+
+- The production code is using *StringSerializer* for the message key and *ByteArrayDeserializer* for the message body.
+- The test code for producers is using *StringSerializer* for both the message key and message body.
+
 ## Links
 
 - https://stackoverflow.com/questions/73468885/start-binding-in-paused-state

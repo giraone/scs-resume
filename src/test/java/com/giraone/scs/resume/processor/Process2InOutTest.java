@@ -10,7 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -51,10 +50,8 @@ class Process2InOutTest extends AbstractInOutTest {
         try {
             produce(topicIn, pf);
 
-            ConsumerRecord<String, String> consumerRecord = KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis());
-            assertThat(consumerRecord).isNotNull();
-            LOGGER.info("ProcessInOutTest testProcessWorks POLL TOPIC \"{}\"RETURNED key={} value={}",
-                topicOut, consumerRecord.key(), consumerRecord.value());
+            LOGGER.info("{} POLLING TOPIC {}", getClass().getName(), topicOut);
+            ConsumerRecord<String, String> consumerRecord = pollTopic(topicOut);
             assertThat(consumerRecord.key()).isNotNull();
             assertThat(consumerRecord.value()).isNotNull();
             // Check that Date/Time-as-String works
@@ -75,7 +72,8 @@ class Process2InOutTest extends AbstractInOutTest {
         MessageIn messageIn = MessageIn.builder()
             .name("test")
             .build();
-        template.send(topicIn, objectMapper.writeValueAsString(messageIn));
+        String messageKey = String.format("%08d", System.currentTimeMillis()); // to test StringSerializer
+        template.send(topicIn, messageKey, objectMapper.writeValueAsString(messageIn));
         Thread.sleep(DEFAULT_SLEEP_AFTER_PRODUCE_TIME.toMillis());
     }
 }
