@@ -35,8 +35,9 @@ curl http://localhost:8070/actuator/health
 cd docker
 # Write 10 events into topic-in
 ./create-messages.sh 10
-# Read event from topic-out1 and topic-out2
+# Read events from topic-out1 and topic-out2
 docker exec -i kafka-1 kafka-console-consumer --bootstrap-server kafka-1:9092 --topic topic-out-1 --from-beginning
+docker exec -i kafka-1 kafka-console-consumer --bootstrap-server kafka-1:9092 --topic topic-out-2 --from-beginning
 ```
 
 Now pause/resume, while there are still events:
@@ -44,6 +45,20 @@ Now pause/resume, while there are still events:
 - Status process1: `curl http://localhost:8070/api/processors/1/status`
 - Pause process1: `curl http://localhost:8070/api/processors/1/pause`
 - Resume process2: `curl http://localhost:8070/api/processors/1/resume`
+
+### Open Issue
+
+When a processor is stopped, while working, this exception occurs
+
+```
+org.apache.kafka.common.KafkaException: Producer is closed forcefully.
+	at org.apache.kafka.clients.producer.internals.RecordAccumulator.abortBatches(RecordAccumulator.java:1083) ~[kafka-clients-3.3.1.jar:na]
+	at org.apache.kafka.clients.producer.internals.RecordAccumulator.abortIncompleteBatches(RecordAccumulator.java:1070) ~[kafka-clients-3.3.1.jar:na]
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:283) ~[kafka-clients-3.3.1.jar:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+```
+
+But there is no message loss.
 
 ### Actuator
 

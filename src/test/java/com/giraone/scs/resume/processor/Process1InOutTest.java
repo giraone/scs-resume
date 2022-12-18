@@ -13,7 +13,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import static com.giraone.scs.resume.config.TestConfig.*;
-import static com.giraone.scs.resume.processor.Process1InOutTest.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // See https://blog.mimacom.com/testing-apache-kafka-with-spring-boot-junit5/
@@ -42,7 +41,7 @@ class Process1InOutTest extends AbstractInOutTest {
     @Test
     void testProcessWorksWhenPaused() throws JsonProcessingException, InterruptedException {
 
-        LOGGER.info("ProcessInOutTest testProcessWorksWhenStopped");
+        LOGGER.info("Process1InOutTest testProcessWorksWhenStopped");
         switchOnOff.changeStateToPaused(1, true);
         MessageIn messageIn = MessageIn.builder()
             .name("test")
@@ -53,12 +52,13 @@ class Process1InOutTest extends AbstractInOutTest {
     @Test
     void testProcessWorksWhenResumed() throws JsonProcessingException, InterruptedException {
 
-        LOGGER.info("ProcessInOutTest testProcessWorksWhenResumed");
+        LOGGER.info("Process1InOutTest testProcessWorksWhenResumed");
         switchOnOff.changeStateToPaused(1, false);
         MessageIn messageIn = MessageIn.builder()
             .name("test")
             .build();
         ConsumerRecord<String, String> consumerRecord = produceAndAwaitConsume(messageIn, TOPIC_IN, TOPIC_OUT_1);
+
         // Check that Date/Time-as-String works
         assertThat(consumerRecord.value()).contains("\"startTime\":\"");
         MessageOut messageOut = objectMapper.readValue(consumerRecord.value(), MessageOut.class);

@@ -3,7 +3,6 @@ package com.giraone.scs.resume.processor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.giraone.scs.resume.common.ObjectMapperBuilder;
-import com.giraone.scs.resume.model.MessageIn;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -70,7 +69,7 @@ public abstract class AbstractInOutTest {
     protected ConsumerRecord<String, String> pollTopic(String topic) {
         LOGGER.info("POLLING TOPIC \"{}\"", topic);
         ConsumerRecord<String, String> consumerRecord = KafkaTestUtils.getSingleRecord(
-            consumer, topic, DEFAULT_CONSUMER_POLL_TIME.toMillis());
+            consumer, topic, DEFAULT_CONSUMER_POLL_TIME);
         LOGGER.info("POLL TOPIC \"{}\" RETURNED key={} value={}",
             topic, consumerRecord.key(), consumerRecord.value());
         return consumerRecord;
@@ -78,7 +77,7 @@ public abstract class AbstractInOutTest {
 
     protected void pollTopicForBeingEmpty(String topic) {
         LOGGER.info("POLLING TOPIC \"{}\" TO BE EMPTY", topic);
-        assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topic, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
+        assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topic, DEFAULT_CONSUMER_POLL_TIME))
             .hasMessageContaining("No records found for topic");
     }
 
@@ -107,7 +106,7 @@ public abstract class AbstractInOutTest {
 
     protected void produceAndCheckEmpty(Object message, String topicIn, String topicOut) throws JsonProcessingException, InterruptedException {
         produce(message, topicIn);
-        assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME.toMillis()))
+        assertThatThrownBy(() -> KafkaTestUtils.getSingleRecord(consumer, topicOut, DEFAULT_CONSUMER_POLL_TIME))
             .hasMessageContaining("No records found for topic");
     }
 

@@ -6,13 +6,13 @@ import com.giraone.scs.resume.model.MessageOut;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
-import static com.giraone.scs.resume.config.TestConfig.TOPIC_IN;
-import static com.giraone.scs.resume.config.TestConfig.TOPIC_OUT_2;
+import static com.giraone.scs.resume.config.TestConfig.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // See https://blog.mimacom.com/testing-apache-kafka-with-spring-boot-junit5/
@@ -29,16 +29,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles({"test", "process2"})
 class Process2InOutTest extends AbstractInOutTest {
 
+    @Autowired
+    private SwitchOnOff switchOnOff;
+
     @BeforeAll
     public void setup() {
         super.setup();
-        embeddedKafka.consumeFromEmbeddedTopics(consumer, TOPIC_IN);
+        embeddedKafka.consumeFromEmbeddedTopics(consumer, TOPIC_OUT_2);
     }
 
     @Test
-    void testProcessWorks() throws JsonProcessingException, InterruptedException {
+    void testProcessWorksWhenPaused() throws JsonProcessingException, InterruptedException {
 
-        LOGGER.info("Process2InOutTest testProcessWorks");
+        LOGGER.info("Process2InOutTest testProcessWorksWhenStopped");
+        switchOnOff.changeStateToPaused(2, true);
+        MessageIn messageIn = MessageIn.builder()
+            .name("test")
+            .build();
+        produceAndCheckEmpty(messageIn, TOPIC_IN, TOPIC_OUT_1);
+    }
+
+    @Test
+    void testProcessWorksWhenResumed() throws JsonProcessingException, InterruptedException {
+
+        LOGGER.info("Process2InOutTest testProcessWorksWhenResumed");
+        switchOnOff.changeStateToPaused(2, false);
         MessageIn messageIn = MessageIn.builder()
             .name("test")
             .build();
